@@ -1,0 +1,97 @@
+<!-- bounding/templates/bounding/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bounding Box Tool</title>
+    <style>
+        #canvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bounding Box Tool</h1>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Upload Image</button>
+    </form>
+    
+    <div>
+        {% for image in images %}
+            <img src="{{ image.image.url }}" alt="Uploaded Image" width="200" onclick="loadImage('{{ image.image.url }}')">
+        {% endfor %}
+    </div>
+
+    <canvas id="canvas"></canvas>
+    <p id="coordinates"></p>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        let startX, startY, isDrawing = false;
+        let fileObject;
+
+        function loadFile(url) {
+            const extension = url.split('.').pop().toLowerCase();
+            if (extension === 'pdf') {
+                loadPDF(url);
+            } else {
+                loadImage(url);
+            }
+        }
+
+        function loadImage(url) {
+            const img = new Image();
+            img.src = url;
+            img.onload = function() {
+                const maxWidth = 600;
+                const maxHeight = 600;
+                const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+                canvas.width = maxWidth;
+                canvas.height = maxHeight;
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(img, 0, 0, canvas.width, canvas.height);
+                fileObject = img;
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            startX = (e.clientX - rect.left) / canvas.width;
+            startY = (e.clientY - rect.top) / canvas.height;
+            isDrawing = true;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                const rect = canvas.getBoundingClientRect();
+                const currentX = (e.clientX - rect.left) / canvas.width;
+                const currentY = (e.clientY - rect.top) / canvas.height;
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(fileObject, 0, 0, canvas.width, canvas.height);
+                context.beginPath();
+                context.rect(startX * canvas.width, startY * canvas.height, (currentX - startX) * canvas.width, (currentY - startY) * canvas.height);
+                context.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            isDrawing = false;
+            const rect = canvas.getBoundingClientRect();
+            const endX = (e.clientX - rect.left) / canvas.width;
+            const endY = (e.clientY - rect.top) / canvas.height;
+            document.getElementById('coordinates').innerText = 
+                `Start: (${startX.toFixed(2)}, ${startY.toFixed(2)}), End: (${endX.toFixed(2)}, ${endY.toFixed(2)}), Width: ${(endX - startX).toFixed(2)}, Height: ${(endY - startY).toFixed(2)}`;
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            isDrawing = false;
+        });
+    </script>
+</body>
+</html>

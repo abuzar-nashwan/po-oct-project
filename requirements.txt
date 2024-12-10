@@ -1,0 +1,10 @@
+Django==5.0.6
+fitz==0.0.1.dev2
+pandas==2.2.2
+pdf2image==1.17.0
+Pillow==10.1.0
+pytesseract==0.3.10
+python_dateutil==2.8.2
+tabula_py==2.9.3
+tabulate==0.9.0
+po-meta-magic==0.1.4
